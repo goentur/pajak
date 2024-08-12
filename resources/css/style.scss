@@ -1,0 +1,23 @@
+@import 'node_modules/bootstrap/scss/bootstrap';
+
+
+body::-webkit-scrollbar {
+    background-color: rgba(255, 255, 255, 0.0);
+    width: 8px
+}
+
+body::-webkit-scrollbar-track {
+    background-color: rgba(255, 255, 255, 0.0)
+}
+
+body::-webkit-scrollbar-thumb {
+    background-color: #3b7ddd
+}
+
+body .modal::-webkit-scrollbar {
+    width: 8px
+}
+
+body .modal::-webkit-scrollbar-thumb {
+    background-color: #fff
+}
