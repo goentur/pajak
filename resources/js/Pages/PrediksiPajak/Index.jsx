@@ -12,12 +12,12 @@ function Index({kategoriPajak, jenisPajak}) {
     const [dataGrafik, setDataGrafik] = useState(null);
     const [dataJenisPajak, setDataJenisPajak] = useState(jenisPajak);
     useEffect(() => {
-        // getDataGrafik(dataJenisPajak);
+        getDataGrafik(dataJenisPajak);
     }, [dataJenisPajak]);
     
     const getDataGrafik = async (jenisPajak) => {
         try {
-            const response = await axios.post(route('riwayat-pajak.data'), { 
+            const response = await axios.post(route('prediksi-pajak.data'), { 
                 jenisPajak : jenisPajak
             });
             setDataGrafik(response.data);
@@ -35,14 +35,13 @@ function Index({kategoriPajak, jenisPajak}) {
     };
     return (
         <>
-        <Head title="RIWAYAT PAJAK"/>
+        <Head title="PREDIKSI PAJAK"/>
             <Layout>
                 <Card>
                     <CardHeader>
                         <form onSubmit={handleSubmit} className="row">
                             <div className="col-lg-4">
                                 <select name="kategoriPajak" onChange={handleJenisPajakChange} className="form-control" id="kategoriPajak">
-                                    <option value="">Pilih salah satu</option>
                                     {
                                         kategoriPajak.map((data,index) => (
                                             <option key={index} value={data}>{data}</option>

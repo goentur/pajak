@@ -2,21 +2,47 @@
 
 namespace App\Http\Controllers;
 
+use App\Repositories\AirTanahRepository;
+use App\Repositories\BphtbRepository;
+use App\Repositories\HiburanRepository;
+use App\Repositories\HotelRepository;
+use App\Repositories\ParkirRepository;
+use App\Repositories\PbbRepository;
+use App\Repositories\PbjtRepository;
+use App\Repositories\PpjRepository;
+use App\Repositories\ReklameRepository;
+use App\Repositories\RestoranRepository;
+use App\Repositories\RetribusiRepository;
 use App\Services\DataPajak;
 use Illuminate\Http\Request;
 
 class PrediksiPajakController extends Controller
 {
+    private $pbb, $bphtb, $pbjt, $hotel, $restoran, $hiburan, $ppj, $parkir, $reklame, $airTanah, $retribusi;
+    public function __construct()
+    {
+        $this->pbb = new PbbRepository();
+        $this->bphtb = new BphtbRepository();
+        $this->pbjt = new PbjtRepository();
+        $this->hotel = new HotelRepository();
+        $this->restoran = new RestoranRepository();
+        $this->hiburan = new HiburanRepository();
+        $this->ppj = new PpjRepository();
+        $this->parkir = new ParkirRepository();
+        $this->reklame = new ReklameRepository();
+        $this->airTanah = new AirTanahRepository();
+        $this->retribusi = new RetribusiRepository();
+    }
     public function index()
     {
         return inertia('PrediksiPajak/Index', [
             'kategoriPajak' => $this->ketegoriPajak(),
-            'jenisPajak' => 'SEMUA',
+            'jenisPajak' => 'PBB',
         ]);
     }
     public function ketegoriPajak()
     {
-        return DataPajak::$kategoriPajak;
+        return DataPajak::$kategoriPajakPrediksi;
     }
     public function data(Request $request)
     {
@@ -27,48 +53,81 @@ class PrediksiPajakController extends Controller
     }
     public function dataRiwayat($request = null)
     {
-        if ($request->jenisPajak === 'SEMUA') {
-            return $this->responseDataGrafikSemua(DataPajak::$pajak[$request->tahun], $request->tahun);
-        } else {
-            return $this->responseDataGrafikPerJenis(DataPajak::$pajak[$request->tahun][$request->jenisPajak]['REALISASI'], $request->tahun, $request->jenisPajak);
-        }
+        $tahunSebelumnya = date('Y') - 1;
+        $realisasiData = DataPajak::$pajak[$tahunSebelumnya][$request->jenisPajak]['REALISASI'] ?? [];
+
+        return $this->responsePrediksi($realisasiData, $request->jenisPajak, $tahunSebelumnya);
     }
-    public function responseDataGrafikSemua($data, $tahun)
+
+    public function responsePrediksi($data, $jenisPajak, $tahunSebelumnya)
     {
-        $series = [];
-        foreach ($data as $k => $value) {
-            $datas = [];
-            $category = [];
-            foreach ($data[$k]['REALISASI'] as $d => $isi) {
-                $datas[] = $isi;
-                $category[] = UbahKeBulan($d);
-            }
-            $series[] = [
-                'name' => $k,
+        $category = array_map('UbahKeBulan', array_keys($data));
+        $datas = array_values($data);
+
+        $series = [
+            [
+                'name' => "$tahunSebelumnya",
                 'data' => $datas
-            ];
-        }
+            ]
+        ];
+
+        $dataPajak = $this->getRealisasiBulananByJenisPajak($jenisPajak)->toArray();
+
+        $dataTahunBerjalan = array_column($dataPajak, 'total');
+
+        $alpha = 0.5;
+        $dataPrediksi = $this->exponential_smoothing($datas, $alpha);
+        $datahasilPrediksi = array_merge($dataTahunBerjalan, array_slice($dataPrediksi, count($dataTahunBerjalan)));
+
+        $tahunBerjalan = date('Y');
+        $series[] = [
+            'name' => $tahunBerjalan,
+            'data' => $datahasilPrediksi
+        ];
+
         return [
-            'judul' => 'DATA PAJAK PADA TAHUN ' . $tahun,
+            'judul' => 'PREDIKSI PAJAK ' . $jenisPajak . ' PADA TAHUN ' . $tahunBerjalan,
             'series' => $series,
             'category' => $category,
         ];
     }
-    public function responseDataGrafikPerJenis($data, $tahun, $jenisPajak)
+
+    private function getRealisasiBulananByJenisPajak($jenisPajak)
     {
-        $series = [];
-        $category = [];
-        foreach ($data as $k => $value) {
-            $series[] = $value;
-            $category[] = UbahKeBulan($k);
+        switch ($jenisPajak) {
+            case 'PBB':
+                return $this->pbb->getRealisasiBulanan();
+            case 'BPHTB':
+                return $this->bphtb->getRealisasiBulanan();
+            case 'HOTEL':
+                return $this->hotel->getRealisasiBulanan();
+            case 'RESTORAN':
+                return $this->restoran->getRealisasiBulanan();
+            case 'HIBURAN':
+                return $this->hiburan->getRealisasiBulanan();
+            case 'REKLAME':
+                return $this->reklame->getRealisasiBulanan();
+            case 'PPJ':
+                return $this->ppj->getRealisasiBulanan();
+            case 'PARKIR':
+                return $this->parkir->getRealisasiBulanan();
+            case 'AIR TANAH':
+                return $this->airTanah->getRealisasiBulanan();
+            default:
+                return [];
         }
-        return [
-            'judul' => 'DATA PAJAK ' . $jenisPajak . ' PADA TAHUN ' . $tahun,
-            'series' => [[
-                'name' => $jenisPajak,
-                'data' => $series,
-            ]],
-            'category' => $category,
-        ];
     }
+
+    private function exponential_smoothing($data, $alpha)
+    {
+        $forecast = [$data[0]];
+        $count = count($data);
+
+        for ($i = 1; $i < $count; $i++) {
+            $forecast[$i] = $alpha * $data[$i - 1] + (1 - $alpha) * $forecast[$i - 1];
+        }
+
+        return $forecast;
+    }
+
 }
