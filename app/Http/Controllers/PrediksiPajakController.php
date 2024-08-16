@@ -56,10 +56,12 @@ class PrediksiPajakController extends Controller
         $tahunSebelumnya = date('Y') - 1;
         $realisasiData = DataPajak::$pajak[$tahunSebelumnya][$request->jenisPajak]['REALISASI'] ?? [];
 
-        return $this->responsePrediksi($realisasiData, $request->jenisPajak, $tahunSebelumnya);
+        return $this->responsePrediksiexponential_smoothing($realisasiData, $request->jenisPajak, $tahunSebelumnya);
     }
 
-    public function responsePrediksi($data, $jenisPajak, $tahunSebelumnya)
+
+
+    public function responsePrediksiexponential_smoothing($data, $jenisPajak, $tahunSebelumnya)
     {
         $category = array_map('UbahKeBulan', array_keys($data));
         $datas = array_values($data);
@@ -70,14 +72,21 @@ class PrediksiPajakController extends Controller
                 'data' => $datas
             ]
         ];
-
         $dataPajak = $this->getRealisasiBulananByJenisPajak($jenisPajak)->toArray();
-
+        // remove array terakhir
+        array_pop($dataPajak);
         $dataTahunBerjalan = array_column($dataPajak, 'total');
-
-        $alpha = 0.5;
-        $dataPrediksi = $this->exponential_smoothing($datas, $alpha);
-        $datahasilPrediksi = array_merge($dataTahunBerjalan, array_slice($dataPrediksi, count($dataTahunBerjalan)));
+        // hanya prediksi bulan depan saja
+        $dataPrediksi = $this->prediksiBulanDepanSaja($datas, $dataTahunBerjalan);
+        $datahasilPrediksi = array_merge($dataTahunBerjalan, $dataPrediksi);
+        // tanpa methode
+        // $perdiksiBulanTerakhir = array_slice($datas, 0, date('m') - 12);
+        // $dataPrediksi = $this->exponential_smoothing($perdiksiBulanTerakhir, $alpha);
+        // $datahasilPrediksi = array_merge($dataTahunBerjalan, array_slice($datas, count($dataTahunBerjalan)));
+        // menggunakan methode exponential smoothing
+        // $alpha = 0.5;
+        // $dataPrediksi = $this->exponential_smoothing($datas, $alpha);
+        // $datahasilPrediksi = array_merge($dataTahunBerjalan, array_slice($dataPrediksi, count($dataTahunBerjalan)));
 
         $tahunBerjalan = date('Y');
         $series[] = [
@@ -118,13 +127,34 @@ class PrediksiPajakController extends Controller
         }
     }
 
+    private function prediksiBulanDepanSaja($data, $dataTahunIni)
+    {
+        $bulanSekarang = date('m');
+        $nilaiBulanSebelumnya  = $data[$bulanSekarang - 2];
+        $nilaiBulanIni  = $data[$bulanSekarang - 1];
+        $nilaiTahunIniBulanLalu = $dataTahunIni[$bulanSekarang - 2];
+        if ($nilaiBulanSebelumnya != 0) {
+            $persentasePerubahan = number_format((($nilaiBulanIni - $nilaiBulanSebelumnya) / $nilaiBulanSebelumnya) * 100, 0);
+        } else {
+            $persentasePerubahan = 0;
+        }
+        $result[] = $nilaiTahunIniBulanLalu + ($nilaiTahunIniBulanLalu * $persentasePerubahan) / 100;
+        for ($i = $bulanSekarang; $i < 12; $i++) {
+            $result[] = null;
+        }
+        return $result;
+    }
     private function exponential_smoothing($data, $alpha)
     {
-        $forecast = [$data[0]];
-        $count = count($data);
 
-        for ($i = 1; $i < $count; $i++) {
-            $forecast[$i] = $alpha * $data[$i - 1] + (1 - $alpha) * $forecast[$i - 1];
+        $forecast = [];
+        $count = count($data);
+        for ($i = 0; $i < $count; $i++) {
+            $arraySebelumnya = 0;
+            if ($i > 0) {
+                $arraySebelumnya = $forecast[$i - 1];
+            }
+            $forecast[$i] = $alpha * $data[$i] + (1 - $alpha) * $arraySebelumnya;
         }
 
         return $forecast;
