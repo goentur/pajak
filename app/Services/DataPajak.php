@@ -836,5 +836,5 @@ class DataPajak
         ]
     ];
     public static $kategoriPajak = ['SEMUA', 'PBB', 'BPHTB', 'HOTEL', 'RESTORAN', 'HIBURAN', 'REKLAME', 'PPJ', 'PARKIR', 'AIR TANAH'];
-    public static $kategoriPajakPrediksi = ['PBB', 'BPHTB', 'HOTEL', 'RESTORAN', 'HIBURAN', 'REKLAME', 'PPJ', 'PARKIR', 'AIR TANAH'];
+    public static $kategoriPajakPrediksi = ['PBB', 'BPHTB', 'PBJT', 'HOTEL', 'RESTORAN', 'HIBURAN', 'REKLAME', 'PPJ', 'PARKIR', 'AIR TANAH'];
 }

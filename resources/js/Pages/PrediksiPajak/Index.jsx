@@ -5,11 +5,13 @@ import { useEffect, useState } from "react"
 import { useRoute } from '../../../../vendor/tightenco/ziggy';
 import axios from "axios"
 import { Head } from "@inertiajs/react"
+import TabelPrediksi from "./TabelPrediksi";
 
 function Index({kategoriPajak, jenisPajak}) {
     const route = useRoute();
 
     const [dataGrafik, setDataGrafik] = useState(null);
+    const [dataTabel, setDataTabel] = useState(null);
     const [dataJenisPajak, setDataJenisPajak] = useState(jenisPajak);
     useEffect(() => {
         getDataGrafik(dataJenisPajak);
@@ -20,7 +22,8 @@ function Index({kategoriPajak, jenisPajak}) {
             const response = await axios.post(route('prediksi-pajak.data'), { 
                 jenisPajak : jenisPajak
             });
-            setDataGrafik(response.data);
+            setDataGrafik(response.data.grafik);
+            setDataTabel(response.data.tabel);
         } catch (e) {
             console.log(e);
         }
@@ -53,6 +56,7 @@ function Index({kategoriPajak, jenisPajak}) {
                     </CardHeader>
                     <CardBody>
                         {dataGrafik!==null ? <Line data={dataGrafik}></Line>:''}
+                        {dataTabel!== null ? <TabelPrediksi datas={dataTabel}/> :''}
                     </CardBody>
                 </Card>
             </Layout>

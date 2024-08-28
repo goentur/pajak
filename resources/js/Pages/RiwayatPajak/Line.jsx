@@ -16,7 +16,7 @@ function Line({data}) {
                     }
                 }
             },
-            colors: ['#0168fa', '#5b47fb', '#6f42c1', '#f10075', '#dc3545', '#fd7e14', '#ffc107', '#10b759', '#00cccc', '#00b8d4', '#1ba891'],
+            colors: ['#4AB9A8', '#FD9847', '#8666C9', '#33C6E0', '#F14A91', '#7A5BFB', '#33CCCC', '#E34D5E', '#FFD347', '#33C578', '#3A87FA'],
             dataLabels: {
                 enabled: false
             },

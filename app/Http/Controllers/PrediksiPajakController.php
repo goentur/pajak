@@ -54,15 +54,40 @@ class PrediksiPajakController extends Controller
     public function dataRiwayat($request = null)
     {
         $tahunSebelumnya = date('Y') - 1;
-        $realisasiData = DataPajak::$pajak[$tahunSebelumnya][$request->jenisPajak]['REALISASI'] ?? [];
 
+        if ($request->jenisPajak !== 'PBJT') {
+            // $realisasiData = DataPajak::$pajak[$tahunSebelumnya][$request->jenisPajak]['REALISASI'] ?? [];
+            $realisasiData = DataPajak::$pajak[$tahunSebelumnya][$request->jenisPajak] ?? [];
+        } else {
+            $categories = ['HOTEL', 'RESTORAN', 'HIBURAN', 'PPJ', 'PARKIR'];
+            $totalTarget = 0;
+            $totalPendapatan = 0;
+            $realisasi = array_fill(1, 12, 0);
+
+            foreach ($categories as $category) {
+                if (isset(DataPajak::$pajak[$tahunSebelumnya][$category])) {
+                    $categoryData = DataPajak::$pajak[$tahunSebelumnya][$category];
+                    $totalTarget += $categoryData['TARGET'];
+                    $totalPendapatan += $categoryData['PENDAPATAN'];
+                    for ($i = 1; $i <= 12; $i++) {
+                        if (isset($categoryData['REALISASI'][$i])) {
+                            $realisasi[$i] += $categoryData['REALISASI'][$i];
+                        }
+                    }
+                }
+            }
+            $realisasiData = [
+                'TARGET' => $totalTarget,
+                'PENDAPATAN' => $totalPendapatan,
+                'REALISASI' => $realisasi
+            ];
+        }
         return $this->responsePrediksiexponential_smoothing($realisasiData, $request->jenisPajak, $tahunSebelumnya);
     }
 
-
-
-    public function responsePrediksiexponential_smoothing($data, $jenisPajak, $tahunSebelumnya)
+    public function responsePrediksiexponential_smoothing($dataTahunLalu, $jenisPajak, $tahunSebelumnya)
     {
+        $data = $dataTahunLalu['REALISASI'];
         $category = array_map('UbahKeBulan', array_keys($data));
         $datas = array_values($data);
 
@@ -77,8 +102,9 @@ class PrediksiPajakController extends Controller
         array_pop($dataPajak);
         $dataTahunBerjalan = array_column($dataPajak, 'total');
         // hanya prediksi bulan depan saja
-        $dataPrediksi = $this->prediksiBulanDepanSaja($datas, $dataTahunBerjalan);
-        $datahasilPrediksi = array_merge($dataTahunBerjalan, $dataPrediksi);
+        // $dataPrediksi = $this->prediksiBulanDepanSaja($datas, $dataTahunBerjalan);
+        $dataPrediksi = $this->prediksiBulanTahunan($datas, $dataTahunBerjalan);
+        // $datahasilPrediksi = array_merge($dataTahunBerjalan, $dataPrediksi);
         // tanpa methode
         // $perdiksiBulanTerakhir = array_slice($datas, 0, date('m') - 12);
         // $dataPrediksi = $this->exponential_smoothing($perdiksiBulanTerakhir, $alpha);
@@ -91,13 +117,33 @@ class PrediksiPajakController extends Controller
         $tahunBerjalan = date('Y');
         $series[] = [
             'name' => $tahunBerjalan,
-            'data' => $datahasilPrediksi
+            // 'data' => $datahasilPrediksi
+            'data' => $dataPrediksi
         ];
-
+        $targetTahunLalu = $dataTahunLalu['TARGET'];
+        $totalRealisasiTahunLalu = array_sum($datas);
+        $targetTahunIni = $this->getTargetByJenisPajak($jenisPajak);
+        $totalRealisasiTahunIni = array_sum($dataPrediksi);
         return [
-            'judul' => 'PREDIKSI PAJAK ' . $jenisPajak . ' PADA TAHUN ' . $tahunBerjalan,
-            'series' => $series,
-            'category' => $category,
+            'grafik' => [
+                'judul' => 'PREDIKSI PAJAK ' . $jenisPajak . ' PADA TAHUN ' . $tahunBerjalan,
+                'series' => $series,
+                'category' => $category,
+            ],
+            'tabel' => [
+                $tahunSebelumnya => [
+                    'target' => currency($targetTahunLalu),
+                    'realisasi' => array_map('currency', $datas),
+                    'total' => currency($totalRealisasiTahunLalu),
+                    'persentase' => number_format(($totalRealisasiTahunLalu / $targetTahunLalu) * 100, 2),
+                ],
+                $tahunBerjalan => [
+                    'target' => currency($targetTahunIni),
+                    'realisasi' => array_map('currency', $dataPrediksi),
+                    'total' => currency($totalRealisasiTahunIni),
+                    'persentase' => number_format(($totalRealisasiTahunIni / $targetTahunIni) * 100, 2),
+                ]
+            ]
         ];
     }
 
@@ -108,6 +154,8 @@ class PrediksiPajakController extends Controller
                 return $this->pbb->getRealisasiBulanan();
             case 'BPHTB':
                 return $this->bphtb->getRealisasiBulanan();
+            case 'PBJT':
+                return $this->pbjt->getRealisasiBulanan();
             case 'HOTEL':
                 return $this->hotel->getRealisasiBulanan();
             case 'RESTORAN':
@@ -122,6 +170,33 @@ class PrediksiPajakController extends Controller
                 return $this->parkir->getRealisasiBulanan();
             case 'AIR TANAH':
                 return $this->airTanah->getRealisasiBulanan();
+            default:
+                return [];
+        }
+    }
+    private function getTargetByJenisPajak($jenisPajak)
+    {
+        switch ($jenisPajak) {
+            case 'PBB':
+                return $this->pbb->getTarget();
+            case 'BPHTB':
+                return $this->bphtb->getTarget();
+            case 'PBJT':
+                return $this->pbjt->getTarget();
+            case 'HOTEL':
+                return $this->hotel->getTarget();
+            case 'RESTORAN':
+                return $this->restoran->getTarget();
+            case 'HIBURAN':
+                return $this->hiburan->getTarget();
+            case 'REKLAME':
+                return $this->reklame->getTarget();
+            case 'PPJ':
+                return $this->ppj->getTarget();
+            case 'PARKIR':
+                return $this->parkir->getTarget();
+            case 'AIR TANAH':
+                return $this->airTanah->getTarget();
             default:
                 return [];
         }
@@ -143,6 +218,24 @@ class PrediksiPajakController extends Controller
             $result[] = null;
         }
         return $result;
+    }
+
+    private function prediksiBulanTahunan($data, $dataTahunIni)
+    {
+        $bulanSekarang = date('m');
+        for ($i = $bulanSekarang; $i < 13; $i++) {
+            $nilaiBulanSebelumnya  = $data[$i - 2];
+            $nilaiBulanIni  = $data[$i - 1];
+            $nilaiTahunIniBulanLalu = $dataTahunIni[$i - 2];
+            if ($nilaiBulanSebelumnya != 0) {
+                $persentasePerubahan = number_format((($nilaiBulanIni - $nilaiBulanSebelumnya) / $nilaiBulanSebelumnya) * 100, 0);
+            } else {
+                $persentasePerubahan = 0;
+            }
+            $nilai = floor(((100 + $persentasePerubahan) / 100) * $nilaiTahunIniBulanLalu);
+            array_push($dataTahunIni, $nilai);
+        }
+        return $dataTahunIni;
     }
     private function exponential_smoothing($data, $alpha)
     {

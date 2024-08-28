@@ -4,6 +4,10 @@ function rupiah($d)
 {
      return 'Rp ' . number_format($d, 0, ',', ',');
 }
+function currency($d)
+{
+     return number_format($d, 0, ',', ',');
+}
 function UbahKeBulan($bulan)
 {
      $months = [

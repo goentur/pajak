@@ -27,7 +27,7 @@ class DataService
         return [
             [
                 'name' => 'PBB',
-                'color' => '#0168fa',
+                'color' => '#4AB9A8',
                 'link' => route('pajak.pbb'),
                 'service' => app()->make(PbbRepository::class)->toArray(),
                 'persentase' => true,
@@ -36,7 +36,7 @@ class DataService
             ],
             [
                 'name' => 'BPHTB',
-                'color' => '#5b47fb',
+                'color' => '#FD9847',
                 'link' => route('pajak.bphtb'),
                 'service' => app()->make(BphtbRepository::class)->toArray(),
                 'persentase' => true,
@@ -45,7 +45,7 @@ class DataService
             ],
             [
                 'name' => 'PBJT',
-                'color' => '#6f42c1',
+                'color' => '#8666C9',
                 'link' => route('pajak.pbjt'),
                 'service' => app()->make(PbjtRepository::class)->toArray(),
                 'persentase' => true,
@@ -54,7 +54,7 @@ class DataService
             ],
             [
                 'name' => 'HOTEL',
-                'color' => '#f10075',
+                'color' => '#33C6E0',
                 'link' => route('pajak.hotel'),
                 'service' => app()->make(HotelRepository::class)->toArray(),
                 'persentase' => false,
@@ -63,7 +63,7 @@ class DataService
             ],
             [
                 'name' => 'RESTORAN',
-                'color' => '#dc3545',
+                'color' => '#F14A91',
                 'link' => route('pajak.restoran'),
                 'service' => app()->make(RestoranRepository::class)->toArray(),
                 'persentase' => false,
@@ -72,7 +72,7 @@ class DataService
             ],
             [
                 'name' => 'HIBURAN',
-                'color' => '#fd7e14',
+                'color' => '#7A5BFB',
                 'link' => route('pajak.hiburan'),
                 'service' => app()->make(HiburanRepository::class)->toArray(),
                 'persentase' => false,
@@ -81,7 +81,7 @@ class DataService
             ],
             [
                 'name' => 'PPJ',
-                'color' => '#ffc107',
+                'color' => '#33CCCC',
                 'link' => route('pajak.ppj'),
                 'service' => app()->make(PpjRepository::class)->toArray(),
                 'persentase' => false,
@@ -90,7 +90,7 @@ class DataService
             ],
             [
                 'name' => 'PARKIR',
-                'color' => '#10b759',
+                'color' => '#E34D5E',
                 'link' => route('pajak.parkir'),
                 'service' => app()->make(ParkirRepository::class)->toArray(),
                 'persentase' => false,
@@ -99,7 +99,7 @@ class DataService
             ],
             [
                 'name' => 'REKLAME',
-                'color' => '#00cccc',
+                'color' => '#FFD347',
                 'link' => route('pajak.reklame'),
                 'service' => app()->make(ReklameRepository::class)->toArray(),
                 'persentase' => true,
@@ -108,7 +108,7 @@ class DataService
             ],
             [
                 'name' => 'AIR TANAH',
-                'color' => '#00b8d4',
+                'color' => '#33C578',
                 'link' => route('pajak.air-tanah'),
                 'service' => app()->make(AirTanahRepository::class)->toArray(),
                 'persentase' => true,
@@ -117,7 +117,7 @@ class DataService
             ],
             [
                 'name' => 'RETRIBUSI',
-                'color' => '#1ba891',
+                'color' => '#3A87FA',
                 'link' => route('pajak.retribusi'),
                 'service' => app()->make(RetribusiRepository::class)->toArray(),
                 'persentase' => true,

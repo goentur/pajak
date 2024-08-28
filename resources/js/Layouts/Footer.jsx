@@ -15,7 +15,7 @@ function Footer() {
                         <img alt="Logo Pemerintah Kota Pekalongan" src={logo} width="10%" className="mr-5" />
                         <h1 className='mx-2'>Pajak<br />Kota Pekalongan</h1>
                     </Link>
-                    <p>Pajak Online merupakan platform website informasi Pajak Daerah Kota Pekalongan yang dikelola oleh Badan Keuangan Daerah Kota Pekalongan</p>
+                    <p>Pajak Online merupakan platform website informasi Pajak Daerah Kota Pekalongan yang dikelola oleh Badan Pengelolaan Keuangan dan Aset Daerah Kota Pekalongan</p>
                 </div>
                 <div className="col-lg-6 row">
                     <div className="col-lg-4">
@@ -42,7 +42,7 @@ function Footer() {
                 </div>
                 <div className="col-lg-12 mt-5 row">
                     <div className="col-lg-8">
-                        Hak Cipta &copy; 2024 Pajak Online · Dikelola oleh <a href="https://bakeuda.pekalongankota.go.id" target="_blank" className="link-body-emphasis text-decoration-none">Badan Keuangan Daerah Kota Pekalongan</a>.
+                        Hak Cipta &copy; 2024 Pajak Online · Dikelola oleh <a href="https://bakeuda.pekalongankota.go.id" target="_blank" className="link-body-emphasis text-decoration-none">Badan Pengelolaan Keuangan dan Aset Daerah Kota Pekalongan</a>.
                     </div>
                     <div className="col-lg-4 row">
                         <a href="#" className="col-lg-6 link-body-emphasis text-decoration-none">S&K Layanan</a>

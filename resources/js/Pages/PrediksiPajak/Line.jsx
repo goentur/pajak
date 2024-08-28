@@ -14,7 +14,7 @@ function Line({data}) {
                             tools : {
                                 download : false,
                             }
-                        }
+                        },
                     },
                     dataLabels: {
                         enabled: false
@@ -54,7 +54,7 @@ function Line({data}) {
     };
     return (
     <>
-        <ReactApexChart options={options.options} series={options.series} type="line"/>
+        <ReactApexChart options={options.options} series={options.series} type="line" height="475px"/>
     </>
     );
   
