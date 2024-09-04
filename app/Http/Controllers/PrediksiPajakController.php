@@ -182,7 +182,7 @@ class PrediksiPajakController extends Controller
                 ],
                 $tahunBerikutnya => [
                     'target' => 'Belum Ada',
-                    'realisasi' => array_map('currency', $dataPrediksi),
+                    'realisasi' => array_map('currency', $dataPajakTahunBerikutnya),
                     'total' => currency($totalRealisasiTahunBerikutnya),
                     'persentase' => 0,
                 ]

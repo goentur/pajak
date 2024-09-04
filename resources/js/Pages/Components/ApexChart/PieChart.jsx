@@ -40,7 +40,7 @@ function PieChart({ data,tahun }) {
                 align: 'center',
                 margin: 25,
                 style: {
-                    fontSize:  '30px',
+                    fontSize:  '18px',
                     fontWeight:  'bold',
                     color:  '#0d6efd'
                 },
@@ -50,7 +50,7 @@ function PieChart({ data,tahun }) {
                 align: 'center',
                 margin: 25,
                 style: {
-                    fontSize:  '25px',
+                    fontSize:  '14px',
                     color:  '#0d6efd'
                 },
             },
@@ -75,7 +75,7 @@ function PieChart({ data,tahun }) {
                 }
             },
             responsive: [{
-                breakpoint: 100,
+                breakpoint: 50,
                 options: {
                     legend: {
                         position: 'bottom'

@@ -40,7 +40,7 @@ function Index({tahun, kategoriPajak, tahunSebelumnya,jenisPajak}) {
     };
     return (
         <>
-        <Head title="RIWAYAT PAJAK"/>
+        <Head title="Riwayat"/>
             <Layout>
                 <Card>
                     <CardHeader>

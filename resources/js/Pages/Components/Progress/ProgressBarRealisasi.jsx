@@ -4,15 +4,15 @@ import { Rupiah } from '../../../Helpers/Rupiah';
 function ProgressBarRealisasi({ nama, target, realisasi, persenRealisasi }) {
     return (
     <>
-        <div className="rounded border-start p-3 border-5 border-primary shadow mb-3">
+        <div className="rounded border-start p-3 border-3 border-primary shadow mb-3">
             <div className="row">
-                <div className="col-6 py-1 fw-bold">{Rupiah(realisasi)}</div>
-                <div className="col-6 py-1 text-end fw-bold">{ nama }</div>
-                <div className="col-12 py-1">
-                    <ProgressBar variant='success' animated now={persenRealisasi} />
+                <div style={{fontSize:'13px'}} className="col-6 fw-medium">{Rupiah(realisasi)}</div>
+                <div style={{fontSize:'13px'}} className="col-6 text-end fw-medium">{ nama }</div>
+                <div className="col-12 py-3">
+                    <ProgressBar variant='success' style={{height:'6px'}} animated now={persenRealisasi} />
                 </div>
-                <div className="col-6 py-1">{ Rupiah(target) }</div>
-                <div className="col-6 py-1 text-end">{ persenRealisasi }%</div>
+                <div style={{fontSize:'13px'}} className="col-6 text-body-secondary">{ Rupiah(target) }</div>
+                <div style={{fontSize:'13px'}} className="col-6 text-body-secondary text-end">{ persenRealisasi }%</div>
             </div>
         </div>
     </>

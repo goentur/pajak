@@ -38,7 +38,7 @@ function Index({kategoriPajak, jenisPajak}) {
     };
     return (
         <>
-        <Head title="PREDIKSI PAJAK"/>
+        <Head title="Prediksi"/>
             <Layout>
                 <Card>
                     <CardHeader>

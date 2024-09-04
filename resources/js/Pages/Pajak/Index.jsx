@@ -5,7 +5,7 @@ import BarChart from "../Components/ApexChart/BarChart";
 function Index({ title, name, realisasi }){
     return (
     <Layout>
-        <Head title={`PAJAK - ${name}`}/>
+        <Head title={`Realisasi ${name}`}/>
         <div className="card border-primary shadow">
             <div className="card-header h3">REALISASI { title }</div>
             <div className="card-body">

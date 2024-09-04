@@ -18,16 +18,16 @@ function RadialBar({persentase, warna}) {
                     dataLabels: {
                         name: {
                             show: true,
-                            offsetY: 13,
+                            offsetY: 6,
                             color : `${warna}`,
-                            fontSize: '35px',
+                            fontSize: '12rm',
                         },
                         value: {
                             show: false
                         },
                     },
                     hollow: {
-                        size: '75%',
+                        size: '65%',
                     }
                 },
             },
@@ -39,7 +39,7 @@ function RadialBar({persentase, warna}) {
     };
     return (
     <>
-        <ReactApexChart options={options.options} series={options.series} type="radialBar"/>
+        <ReactApexChart options={options.options} series={options.series} type="radialBar" className="mt-3 mb-3"/>
     </>
     );
   
