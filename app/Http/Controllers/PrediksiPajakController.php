@@ -49,15 +49,13 @@ class PrediksiPajakController extends Controller
         $request->validate([
             'jenisPajak' => ['required', 'string'],
         ]);
-        return $this->dataRiwayat($request);
+        return $this->responsePrediksiexponential_smoothing($request);
     }
-    public function dataRiwayat($request = null)
+    public function dataRiwayat($jenis, $tahun)
     {
-        $tahunSebelumnya = date('Y') - 1;
-
-        if ($request->jenisPajak !== 'PBJT') {
-            // $realisasiData = DataPajak::$pajak[$tahunSebelumnya][$request->jenisPajak]['REALISASI'] ?? [];
-            $realisasiData = DataPajak::$pajak[$tahunSebelumnya][$request->jenisPajak] ?? [];
+        if ($jenis !== 'PBJT') {
+            // $realisasiData = DataPajak::$pajak[$tahunSebelumnya][$jenis]['REALISASI'] ?? [];
+            $realisasiData = DataPajak::$pajak[$tahun][$jenis] ?? [];
         } else {
             $categories = ['HOTEL', 'RESTORAN', 'HIBURAN', 'PPJ', 'PARKIR'];
             $totalTarget = 0;
@@ -65,8 +63,8 @@ class PrediksiPajakController extends Controller
             $realisasi = array_fill(1, 12, 0);
 
             foreach ($categories as $category) {
-                if (isset(DataPajak::$pajak[$tahunSebelumnya][$category])) {
-                    $categoryData = DataPajak::$pajak[$tahunSebelumnya][$category];
+                if (isset(DataPajak::$pajak[$tahun][$category])) {
+                    $categoryData = DataPajak::$pajak[$tahun][$category];
                     $totalTarget += $categoryData['TARGET'];
                     $totalPendapatan += $categoryData['PENDAPATAN'];
                     for ($i = 1; $i <= 12; $i++) {
@@ -82,48 +80,87 @@ class PrediksiPajakController extends Controller
                 'REALISASI' => $realisasi
             ];
         }
-        return $this->responsePrediksiexponential_smoothing($realisasiData, $request->jenisPajak, $tahunSebelumnya);
+        return $realisasiData;
     }
 
-    public function responsePrediksiexponential_smoothing($dataTahunLalu, $jenisPajak, $tahunSebelumnya)
+    public function responsePrediksiexponential_smoothing($request)
     {
-        $data = $dataTahunLalu['REALISASI'];
-        $category = array_map('UbahKeBulan', array_keys($data));
-        $datas = array_values($data);
-
-        $series = [
-            [
-                'name' => "$tahunSebelumnya",
-                'data' => $datas
-            ]
-        ];
+        $jenisPajak = $request->jenisPajak;
+        $duaTahunLalu = date('Y') - 2;
+        $satuTahunLalu = date('Y') - 1;
+        $tahunBerjalan = date('Y');
+        $tahunBerikutnya = date('Y') + 1;
+        $dataHistoryPajak = [];
+        $dataPajakDuaTahunLalu = $this->dataRiwayat($jenisPajak, $duaTahunLalu);
+        $dataHistoryDuaTahunSebelumnya = array_map(function ($entry, $index) use ($duaTahunLalu) {
+            return [
+                'tanggal' => $duaTahunLalu . '-' . $index,
+                'total' => "$entry"
+            ];
+        }, $dataPajakDuaTahunLalu['REALISASI'], array_keys($dataPajakDuaTahunLalu['REALISASI']));
+        $dataHistoryPajak = array_merge($dataHistoryPajak, $dataHistoryDuaTahunSebelumnya);
+        $dataPajakSatuTahunLalu = $this->dataRiwayat($jenisPajak, $satuTahunLalu);
+        $dataHistorySatuTahunSebelumnya = array_map(function ($entry, $index) use ($satuTahunLalu) {
+            return [
+                'tanggal' => $satuTahunLalu . '-' . $index,
+                'total' => "$entry"
+            ];
+        }, $dataPajakSatuTahunLalu['REALISASI'], array_keys($dataPajakSatuTahunLalu['REALISASI']));
+        $dataHistoryPajak = array_merge($dataHistoryPajak, $dataHistorySatuTahunSebelumnya);
         $dataPajak = $this->getRealisasiBulananByJenisPajak($jenisPajak)->toArray();
         // remove array terakhir
+        if (count($dataPajak) <= date('m') - 1) {
+            array_push($dataPajak, [0]);
+        }
         array_pop($dataPajak);
-        $dataTahunBerjalan = array_column($dataPajak, 'total');
-        // hanya prediksi bulan depan saja
-        // $dataPrediksi = $this->prediksiBulanDepanSaja($datas, $dataTahunBerjalan);
-        $dataPrediksi = $this->prediksiBulanTahunan($datas, $dataTahunBerjalan);
-        // $datahasilPrediksi = array_merge($dataTahunBerjalan, $dataPrediksi);
-        // tanpa methode
-        // $perdiksiBulanTerakhir = array_slice($datas, 0, date('m') - 12);
-        // $dataPrediksi = $this->exponential_smoothing($perdiksiBulanTerakhir, $alpha);
-        // $datahasilPrediksi = array_merge($dataTahunBerjalan, array_slice($datas, count($dataTahunBerjalan)));
-        // menggunakan methode exponential smoothing
-        // $alpha = 0.5;
-        // $dataPrediksi = $this->exponential_smoothing($datas, $alpha);
-        // $datahasilPrediksi = array_merge($dataTahunBerjalan, array_slice($dataPrediksi, count($dataTahunBerjalan)));
+        $dataHistoryTahunBerjalan = array_map(function ($entry) use ($tahunBerjalan) {
+            return [
+                'tanggal' => $tahunBerjalan . '-' . $entry->bulan,
+                'total' => $entry->total
+            ];
+        }, $dataPajak);
+        $dataHistoryPajak = array_merge($dataHistoryPajak, $dataHistoryTahunBerjalan);
 
-        $tahunBerjalan = date('Y');
+        $historicalData = [];
+        $timeline = [];
+        $historicalData = array_map(function ($entry) {
+            return $entry['total'];
+        }, $dataHistoryPajak);
+        $timeline = array_map(function ($entry) {
+            return $entry['tanggal'];
+        }, $dataHistoryPajak);
+
+        $category = array_map('UbahKeBulan', array_keys($dataPajakSatuTahunLalu['REALISASI']));
+        $datas = array_values($dataPajakSatuTahunLalu['REALISASI']);
+        
+        $series = [
+            [
+                'name' => "$satuTahunLalu",
+                'data' => $datas
+            ]
+            ];
+        $dataTahunBerjalan = array_column($dataPajak, 'total');
+
+        $dataPrediksi = $this->prediksiBulanTahunan($datas, $dataTahunBerjalan);
+        $bulanBerjalan = 13 - date('m');
+        $futurePeriods = $bulanBerjalan + 12;
+
+        $forecasts = $this->forecastETSNEW($historicalData, $timeline, $futurePeriods, 12, 0, 'median');
+        $dataPajakTahunBerjalan = array_merge($dataTahunBerjalan, array_slice($forecasts, 0, $bulanBerjalan));
         $series[] = [
             'name' => $tahunBerjalan,
-            // 'data' => $datahasilPrediksi
-            'data' => $dataPrediksi
+            'data' => $dataPajakTahunBerjalan,
         ];
-        $targetTahunLalu = $dataTahunLalu['TARGET'];
+        $dataPajakTahunBerikutnya = array_slice($forecasts, $bulanBerjalan);
+        $series[] = [
+            'name' => $tahunBerikutnya,
+            'data' => $dataPajakTahunBerikutnya,
+        ];
+        $targetTahunLalu = $dataPajakSatuTahunLalu['TARGET'];
         $totalRealisasiTahunLalu = array_sum($datas);
         $targetTahunIni = $this->getTargetByJenisPajak($jenisPajak);
-        $totalRealisasiTahunIni = array_sum($dataPrediksi);
+        $totalRealisasiTahunIni = array_sum($dataPajakTahunBerjalan);
+        $totalRealisasiTahunBerikutnya = array_sum($dataPajakTahunBerikutnya);
         return [
             'grafik' => [
                 'judul' => 'PREDIKSI PAJAK ' . $jenisPajak . ' PADA TAHUN ' . $tahunBerjalan,
@@ -131,7 +168,7 @@ class PrediksiPajakController extends Controller
                 'category' => $category,
             ],
             'tabel' => [
-                $tahunSebelumnya => [
+                $satuTahunLalu => [
                     'target' => currency($targetTahunLalu),
                     'realisasi' => array_map('currency', $datas),
                     'total' => currency($totalRealisasiTahunLalu),
@@ -139,9 +176,15 @@ class PrediksiPajakController extends Controller
                 ],
                 $tahunBerjalan => [
                     'target' => currency($targetTahunIni),
-                    'realisasi' => array_map('currency', $dataPrediksi),
+                    'realisasi' => array_map('currency', $dataPajakTahunBerjalan),
                     'total' => currency($totalRealisasiTahunIni),
                     'persentase' => number_format(($totalRealisasiTahunIni / $targetTahunIni) * 100, 2),
+                ],
+                $tahunBerikutnya => [
+                    'target' => 'Belum Ada',
+                    'realisasi' => array_map('currency', $dataPrediksi),
+                    'total' => currency($totalRealisasiTahunBerikutnya),
+                    'persentase' => 0,
                 ]
             ]
         ];
@@ -202,31 +245,13 @@ class PrediksiPajakController extends Controller
         }
     }
 
-    private function prediksiBulanDepanSaja($data, $dataTahunIni)
-    {
-        $bulanSekarang = date('m');
-        $nilaiBulanSebelumnya  = $data[$bulanSekarang - 2];
-        $nilaiBulanIni  = $data[$bulanSekarang - 1];
-        $nilaiTahunIniBulanLalu = $dataTahunIni[$bulanSekarang - 2];
-        if ($nilaiBulanSebelumnya != 0) {
-            $persentasePerubahan = number_format((($nilaiBulanIni - $nilaiBulanSebelumnya) / $nilaiBulanSebelumnya) * 100, 0);
-        } else {
-            $persentasePerubahan = 0;
-        }
-        $result[] = $nilaiTahunIniBulanLalu + ($nilaiTahunIniBulanLalu * $persentasePerubahan) / 100;
-        for ($i = $bulanSekarang; $i < 12; $i++) {
-            $result[] = null;
-        }
-        return $result;
-    }
-
     private function prediksiBulanTahunan($data, $dataTahunIni)
     {
         $bulanSekarang = date('m');
         for ($i = $bulanSekarang; $i < 13; $i++) {
-            $nilaiBulanSebelumnya  = $data[$i - 2];
-            $nilaiBulanIni  = $data[$i - 1];
-            $nilaiTahunIniBulanLalu = $dataTahunIni[$i - 2];
+            $nilaiBulanSebelumnya = $data[$i - 2];
+            $nilaiBulanIni = $data[$i - 1];
+            $nilaiTahunIniBulanLalu = $dataTahunIni[$i - 2] ?? 0;
             if ($nilaiBulanSebelumnya != 0) {
                 $persentasePerubahan = number_format((($nilaiBulanIni - $nilaiBulanSebelumnya) / $nilaiBulanSebelumnya) * 100, 0);
             } else {
@@ -237,20 +262,80 @@ class PrediksiPajakController extends Controller
         }
         return $dataTahunIni;
     }
-    private function exponential_smoothing($data, $alpha)
-    {
 
-        $forecast = [];
-        $count = count($data);
-        for ($i = 0; $i < $count; $i++) {
-            $arraySebelumnya = 0;
-            if ($i > 0) {
-                $arraySebelumnya = $forecast[$i - 1];
-            }
-            $forecast[$i] = $alpha * $data[$i] + (1 - $alpha) * $arraySebelumnya;
+    function forecastETSNEW(array $historicalData, array $timeline, $futurePeriods = 1, $seasonality = 12, $dataCompletion = 0, $aggregation = 'median')
+    {
+        $n = count($historicalData);
+
+        if ($n < $seasonality * 2) {
+            throw new Exception("Not enough data to apply seasonality");
         }
 
-        return $forecast;
+        // Handle Missing Data (Interpolation or Zeros)
+        if ($dataCompletion === 0) {
+            $historicalData = $this->interpolateMissingData($historicalData, $timeline);
+        } elseif ($dataCompletion === 1) {
+            $historicalData = $this->fillMissingDataWithZeros($historicalData, $timeline);
+        }
+
+        // Initial Values
+        $level = $historicalData[0];
+        $trend = ($historicalData[1] - $historicalData[0]) / $seasonality;
+        $season = array_slice($historicalData, 0, $seasonality);
+
+        // Calculate Level, Trend, and Seasonality Components
+        for ($i = $seasonality; $i < $n; $i++) {
+            $previousLevel = $level;
+            $level = 0.2 * ($historicalData[$i] - $season[$i % $seasonality]) + 0.8 * ($previousLevel + $trend);
+            $trend = 0.1 * ($level - $previousLevel) + 0.9 * $trend;
+
+            // Apply the median aggregation for seasonality
+            if ($aggregation === 'median') {
+                $season[$i % $seasonality] = $this->calculateMedian([$historicalData[$i] - $level, $season[$i % $seasonality]]);
+            } else {
+                $season[$i % $seasonality] = 0.1 * ($historicalData[$i] - $level) + 0.9 * $season[$i % $seasonality];
+            }
+        }
+
+        // Forecast Calculation for Future Periods
+        $forecasts = [];
+        for ($i = 1; $i <= $futurePeriods; $i++) {
+            $forecast = ($level + $i * $trend) + $season[($n + $i - 1) % $seasonality];
+            $forecasts[] = $forecast > 0 ? $forecast : 0;
+        }
+
+        return $forecasts;
     }
+
+    function calculateMedian(array $values)
+    {
+        sort($values);
+        $count = count($values);
+        $middle = floor($count / 2);
+
+        if ($count % 2) {
+            return $values[$middle];
+        }
+
+        return ($values[$middle - 1] + $values[$middle]) / 2.0;
+    }
+
+
+
+    function interpolateMissingData(array $data, array $timeline)
+    {
+        // Implement linear interpolation for missing data
+        // For simplicity, let's assume no missing data here
+        return $data;
+    }
+
+    function fillMissingDataWithZeros(array $data, array $timeline)
+    {
+        // Implement logic to fill missing data with zeros
+        // For simplicity, let's assume no missing data here
+        return $data;
+    }
+
+
 
 }

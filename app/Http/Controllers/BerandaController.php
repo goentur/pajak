@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Services\DataService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class BerandaController extends Controller
 {
